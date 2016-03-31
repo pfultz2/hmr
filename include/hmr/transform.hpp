@@ -30,11 +30,11 @@ struct transform_iterator : hmr::detail::iterator_operators<transform_iterator<I
     typedef decltype(fit::apply(std::declval<Transformer>(),*std::declval<Iterator>())) reference;
     typedef typename std::decay<reference>::type value_type;
     typedef value_type* pointer;
-    typedef std::conditional<
+    typedef typename std::conditional<
         (std::is_reference<reference>::value), 
         typename std::iterator_traits<Iterator>::iterator_category, 
         std::input_iterator_tag
-    > iterator_category;
+    >::type iterator_category;
 
     Iterator it;
     Transformer* t;
@@ -42,7 +42,7 @@ struct transform_iterator : hmr::detail::iterator_operators<transform_iterator<I
     transform_iterator()
     {}
 
-    template<class T>
+    template<class T, FIT_ENABLE_IF_CONVERTIBLE(T, Iterator)>
     transform_iterator(T i, Transformer* f) : it(std::move(i)), t(f)
     {}
 
@@ -56,7 +56,7 @@ struct transform_iterator : hmr::detail::iterator_operators<transform_iterator<I
     friend auto operator+=(transform_iterator& x, T n) FIT_RETURNS(x.it += n);
 
     template<class T>
-    friend auto operator-=(transform_iterator& x, T n) FIT_RETURNS(x.it -= n);
+    friend auto operator-(const transform_iterator& x, const T& y) FIT_RETURNS(x.it - y.it);
 
     template<class T>
     friend auto operator<(const transform_iterator& x, const T& y) FIT_RETURNS(x.it < y.it);

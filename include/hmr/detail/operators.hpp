@@ -83,9 +83,7 @@ struct iterator_operators
     friend auto operator +(const U& lhs, T rhs) -> decltype(T(rhs += lhs)) { return rhs += lhs; }
 
     template<class U>
-    friend auto operator -(T lhs, const U& rhs) -> decltype(T(lhs -= rhs)) { return lhs -= rhs; }
-    template<class U, TICK_REQUIRES(!std::is_same<T, U>::value)>
-    friend auto operator -(const U& lhs, T rhs) -> decltype(T(rhs -= lhs)) { return rhs -= lhs; }
+    friend auto operator-=(T& lhs, const U& rhs) FIT_RETURNS(lhs += -rhs);
 
     template<class U=T>
     friend auto operator++(U& x, int) -> decltype(T(++std::declval<U>()))
