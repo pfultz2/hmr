@@ -1,2 +1,2 @@
 # hmr
-homogeneous modern ranges
+high-performance modern ranges
