@@ -59,9 +59,6 @@ struct transform_iterator : hmr::detail::iterator_operators<transform_iterator<I
     friend auto operator-(const transform_iterator& x, const T& y) FIT_RETURNS(x.it - y.it);
 
     template<class T>
-    friend auto operator<(const transform_iterator& x, const T& y) FIT_RETURNS(x.it < y.it);
-
-    template<class T>
     friend auto operator==(const transform_iterator& x, const T& y) FIT_RETURNS(x.it == y.it);
 
     reference operator *() const 

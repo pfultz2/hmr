@@ -58,6 +58,8 @@ template<class T>
 struct iterator_operators
 {
     template<class U>
+    friend auto operator<(const T& x, const U& y) FIT_RETURNS(static_cast<bool>((x - y) < 0))
+    template<class U>
     friend auto operator<=(const T& x, const U& y) FIT_RETURNS(!static_cast<bool>(x > y))
     template<class U>
     friend auto operator>=(const T& x, const U& y) FIT_RETURNS(!static_cast<bool>(x < y))
