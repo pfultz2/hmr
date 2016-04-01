@@ -57,31 +57,50 @@ typename arrow_proxy_type<T>::type make_arrow_proxy(T&& x)
 template<class T>
 struct iterator_operators
 {
+
+    // Core operators
+    template<class U, TICK_REQUIRES(std::is_same<U, T>::value)>
+    friend auto operator++(U& x) FIT_RETURNS(U::increment(x));
+
+    template<class U, TICK_REQUIRES(std::is_same<U, T>::value)>
+    friend auto operator--(U& x) FIT_RETURNS(U::decrement(x));
+
+    template<class U, class I, TICK_REQUIRES(std::is_same<U, T>::value)>
+    friend auto operator+=(U& x, I n) FIT_RETURNS(U::advance(x, n));
+
+    template<class U, TICK_REQUIRES(std::is_same<U, T>::value)>
+    friend auto operator-(const U& x, const U& y) FIT_RETURNS(U::distance(x, y));
+
+    template<class U, TICK_REQUIRES(std::is_same<U, T>::value)>
+    friend auto operator==(const U& x, const U& y) FIT_RETURNS(U::equal(x, y));
+
+
+
     template<class U>
     friend auto operator<(const T& x, const U& y) FIT_RETURNS(static_cast<bool>((x - y) < 0))
     template<class U>
     friend auto operator<=(const T& x, const U& y) FIT_RETURNS(!static_cast<bool>(x > y))
     template<class U>
     friend auto operator>=(const T& x, const U& y) FIT_RETURNS(!static_cast<bool>(x < y))
-    template<class U, TICK_REQUIRES(!std::is_same<T, U>::value)>
+    template<class U, TICK_REQUIRES(!std::is_convertible<U, T>::value)>
     friend auto operator>(const U& x, const T& y)  FIT_RETURNS(y < x)
-    template<class U, TICK_REQUIRES(!std::is_same<T, U>::value)>
+    template<class U, TICK_REQUIRES(!std::is_convertible<U, T>::value)>
     friend auto operator<(const U& x, const T& y)  FIT_RETURNS(y > x)
-    template<class U, TICK_REQUIRES(!std::is_same<T, U>::value)>
+    template<class U, TICK_REQUIRES(!std::is_convertible<U, T>::value)>
     friend auto operator<=(const U& x, const T& y) FIT_RETURNS(!static_cast<bool>(y < x))
-    template<class U, TICK_REQUIRES(!std::is_same<T, U>::value)>
+    template<class U, TICK_REQUIRES(!std::is_convertible<U, T>::value)>
     friend auto operator>=(const U& x, const T& y) FIT_RETURNS(!static_cast<bool>(y > x))
 
-    template<class U, TICK_REQUIRES(!std::is_same<T, U>::value)>
+    template<class U, TICK_REQUIRES(!std::is_convertible<U, T>::value)>
     friend auto operator==(const U& y, const T& x) FIT_RETURNS(x == y)
-    template<class U, TICK_REQUIRES(!std::is_same<T, U>::value)>
+    template<class U, TICK_REQUIRES(!std::is_convertible<U, T>::value)>
     friend auto operator!=(const U& y, const T& x) FIT_RETURNS(!static_cast<bool>(x == y))
     template<class U>
     friend auto operator!=(const T& y, const U& x) FIT_RETURNS(!static_cast<bool>(y == x))
 
     template<class U>
     friend auto operator +(T lhs, const U& rhs) -> decltype(T(lhs += rhs)) { return lhs += rhs; }
-    template<class U, TICK_REQUIRES(!std::is_same<T, U>::value)>
+    template<class U, TICK_REQUIRES(!std::is_convertible<U, T>::value)>
     friend auto operator +(const U& lhs, T rhs) -> decltype(T(rhs += lhs)) { return rhs += lhs; }
 
     template<class U>
@@ -103,8 +122,8 @@ struct iterator_operators
         return nrv;
     }
 
-    template<class I>
-    auto operator[](I n) const FIT_RETURNS(*(static_cast<const T&>(*this) + n));
+    template<class I, class U=T>
+    auto operator[](I n) const FIT_RETURNS(*(static_cast<const U&>(*this) + n));
 
     template<class U=T>
     auto operator ->() const FIT_RETURNS(detail::make_arrow_proxy(*static_cast<const U&>(*this)));

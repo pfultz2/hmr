@@ -22,12 +22,12 @@
 namespace hmr {
 
 namespace iterator {
-template <class Iterator, class Transformer>
-struct transform_iterator : hmr::detail::iterator_operators<transform_iterator<Iterator, Transformer>>
+template <class Iterator, class Range>
+struct transform_iterator : hmr::detail::iterator_operators<transform_iterator<Iterator, Range>>
 {
 
     typedef typename std::iterator_traits<Iterator>::difference_type difference_type;
-    typedef decltype(fit::apply(std::declval<Transformer>(),*std::declval<Iterator>())) reference;
+    typedef decltype(fit::apply(std::declval<Range>().f,*std::declval<Iterator>())) reference;
     typedef typename std::decay<reference>::type value_type;
     typedef value_type* pointer;
     typedef typename std::conditional<
@@ -37,35 +37,48 @@ struct transform_iterator : hmr::detail::iterator_operators<transform_iterator<I
     >::type iterator_category;
 
     Iterator it;
-    Transformer* t;
+    Range* rng;
 
     transform_iterator()
     {}
 
     template<class T, FIT_ENABLE_IF_CONVERTIBLE(T, Iterator)>
-    transform_iterator(T i, Transformer* f) : it(std::move(i)), t(f)
+    transform_iterator(T i, Range& r) : it(std::move(i)), rng(&r)
     {}
 
-    template<class T, TICK_REQUIRES(std::is_same<T, transform_iterator>::value)>
-    friend auto operator++(T& x) FIT_RETURNS(++x.it);
-
-    template<class T, TICK_REQUIRES(std::is_same<T, transform_iterator>::value)>
-    friend auto operator--(T& x) FIT_RETURNS(--x.it);
+    template<class T>
+    static auto increment(T& x) FIT_RETURNS(++x.it);
 
     template<class T>
-    friend auto operator+=(transform_iterator& x, T n) FIT_RETURNS(x.it += n);
+    static auto decrement(T& x) FIT_RETURNS(--x.it);
+
+    template<class T, class I>
+    static auto advance(T& x, I n) FIT_RETURNS(x.it += n);
 
     template<class T>
-    friend auto operator-(const transform_iterator& x, const T& y) FIT_RETURNS(x.it - y.it);
+    static auto distance(const T& x, const T& y) FIT_RETURNS(x.it - y.it);
 
     template<class T>
-    friend auto operator==(const transform_iterator& x, const T& y) FIT_RETURNS(x.it == y.it);
+    static auto equal(const T& x, const T& y) FIT_RETURNS(x.it == y.it);
 
     reference operator *() const 
     {
-        return fit::apply(*t, *it);
+        return fit::apply(rng->f, *it);
     }    
 };
+
+}
+namespace detail {
+template<class F>
+struct transform_base;
+}
+
+namespace view {
+
+template<class R, class F>
+using transform_range = adaptor_base<detail::transform_base<F>, R>;
+
+FIT_STATIC_FUNCTION(transform) = fit::pipable(fit::limit_c<2>(make_adaptor_base<transform_range>{}));
 
 }
 
@@ -79,22 +92,14 @@ struct transform_base
     {}
 
     template<class Iterator, class Self>
-    static iterator::transform_iterator<Iterator, F> iterator_create(Iterator it, Self&& self)
+    static iterator::transform_iterator<Iterator, Self> iterator_create(Iterator it, Self& self)
     {
-        return {it, &self.f};
+        return {it, self};
     }
 };
 
 }
 
-namespace view {
-
-template<class R, class F>
-using transform_range = adaptor_base<detail::transform_base<F>, R>;
-
-FIT_STATIC_FUNCTION(transform) = fit::pipable(fit::limit_c<2>(make_adaptor_base<transform_range>{}));
-
-}
 
 } // namespace hmr
 
