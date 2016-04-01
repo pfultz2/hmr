@@ -5,8 +5,8 @@
     file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 ==============================================================================*/
 
-#ifndef HMR_GUARD_JOIN_HPP
-#define HMR_GUARD_JOIN_HPP
+#ifndef HMR_GUARD_DETAIL_JOIN_HPP
+#define HMR_GUARD_DETAIL_JOIN_HPP
 
 namespace hmr { namespace detail {
 

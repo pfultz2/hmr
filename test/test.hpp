@@ -38,6 +38,14 @@ prove::predicate_result range_equal(R&& actual, std::initializer_list<Val> expec
     return r;
 }
 
+template<class R, class T>
+R to_(T&& x)
+{
+    using std::begin;
+    using std::end;
+    return R(begin(x), end(x));
+}
+
 int main() 
 {
     prove::run();
