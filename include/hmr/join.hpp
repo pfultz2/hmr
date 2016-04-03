@@ -55,11 +55,7 @@ struct join_iterator : hmr::detail::iterator_operators<join_iterator<OuterIterat
 
     join_iterator(OuterIterator iterator, OuterSentinel last) : iterator(iterator), last(last)
     {
-        if (this->iterator!=this->last) 
-        {
-            this->inner_it = hmr::begin(*this->iterator);
-            if (this->inner_it == hmr::end(*this->iterator)) this->increment();
-        }
+        this->increment<std::false_type>();
     }
 
     bool is_outer_end() const
@@ -67,12 +63,13 @@ struct join_iterator : hmr::detail::iterator_operators<join_iterator<OuterIterat
         return this->iterator == this->last;
     }
 
+    template<class Resume=std::true_type>
     void increment()
     {
-        assert(!this->is_outer_end());
-        goto resume;
+        if (Resume{}) goto resume;
         for(;this->iterator!=this->last;++this->iterator)
         {
+            assert(!this->is_outer_end());
             for(this->inner_it=hmr::begin(*this->iterator);this->inner_it!=hmr::end(*this->iterator);++this->inner_it)
             {
                 return;
