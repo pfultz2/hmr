@@ -96,10 +96,11 @@ struct join_iterator : hmr::detail::iterator_operators<join_iterator<OuterIterat
             for(x.inner_it=hmr::end(*x.iterator);x.inner_it!=hmr::begin(*x.iterator);)
             {
                 --x.inner_it;
-                return;
+                return x;
                 resume:;
             }
         }
+        return x;
     }
 
     template<class T>
