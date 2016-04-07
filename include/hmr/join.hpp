@@ -74,6 +74,7 @@ struct join_iterator : hmr::detail::iterator_operators<join_iterator<OuterIterat
             {
                 return;
                 resume:;
+                assert(!this->is_outer_end());
             }
         }
     }
@@ -98,6 +99,7 @@ struct join_iterator : hmr::detail::iterator_operators<join_iterator<OuterIterat
                 --x.inner_it;
                 return x;
                 resume:;
+                assert(!x.is_outer_end());
             }
         }
         return x;
