@@ -1,12 +1,12 @@
 /*=============================================================================
     Copyright (c) 2016 Paul Fultz II
-    iterator_iterator.hpp
+    iota.hpp
     Distributed under the Boost Software License, Version 1.0. (See accompanying
     file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 ==============================================================================*/
 
-#ifndef HMR_GUARD_ITERATOR_ITERATOR_HPP
-#define HMR_GUARD_ITERATOR_ITERATOR_HPP
+#ifndef HMR_GUARD_IOTA_HPP
+#define HMR_GUARD_IOTA_HPP
 
 #include <hmr/detail/operators.hpp>
 #include <hmr/adaptor_base.hpp>
@@ -17,13 +17,13 @@
 #include <tick/requires.h>
 #include <iterator>
 #include <type_traits>
+#include <hmr/iterator_range.hpp>
 
 namespace hmr {
 
 namespace iterator {
-
 template <class Iterator>
-struct iterator_iterator : hmr::detail::iterator_operators<iterator_iterator<Iterator>>
+struct iota_iterator : hmr::detail::iterator_operators<iota_iterator<Iterator>>
 {
     Iterator it;
 
@@ -33,11 +33,11 @@ struct iterator_iterator : hmr::detail::iterator_operators<iterator_iterator<Ite
     typedef value_type* pointer;
     typedef std::input_iterator_tag iterator_category;
 
-    iterator_iterator()
+    iota_iterator()
     {}
 
     template<class T, FIT_ENABLE_IF_CONVERTIBLE(T, Iterator)>
-    iterator_iterator(T i) : it(std::move(i))
+    iota_iterator(T i) : it(std::move(i))
     {}
 
     template<class T>
@@ -62,10 +62,40 @@ struct iterator_iterator : hmr::detail::iterator_operators<iterator_iterator<Ite
 };
 
 template<class T>
-iterator_iterator<T> make_iterator_iterator(T it)
+iota_iterator<T> make_iota_iterator(T it)
 {
     return {std::move(it)};
 }
+
+}
+
+namespace detail {
+
+struct iota_fn
+{
+    template<class T, class U>
+    auto operator()(T start, U last) const FIT_RETURNS
+    (
+        hmr::make_iterator_range(
+            hmr::iterator::iota_iterator<T>(start), 
+            hmr::iterator::iota_iterator<T>(last)
+        )
+    );
+
+    template<class T>
+    auto operator()(T last) const FIT_RETURNS
+    (
+        hmr::make_iterator_range(
+            hmr::iterator::iota_iterator<T>(0), 
+            hmr::iterator::iota_iterator<T>(last)
+        )
+    )
+};
+
+}
+
+namespace view {
+FIT_STATIC_FUNCTION(iota) = fit::pipable(fit::limit_c<2>(detail::iota_fn()));
 
 }
 
