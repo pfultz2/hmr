@@ -108,7 +108,7 @@ struct join_iterator : hmr::detail::iterator_operators<join_iterator<OuterIterat
     template<class T>
     static bool equal(const T& x, const T& y)
     {
-        x.iterator == y.iterator and (x.is_outer_end() or x.inner_it == y.inner_it);
+        return x.iterator == y.iterator and (x.is_outer_end() or x.inner_it == y.inner_it);
     }
 
     reference operator *() const 
