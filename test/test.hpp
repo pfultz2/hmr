@@ -20,7 +20,7 @@ prove::predicate_result range_equal(R&& actual, std::initializer_list<Val> expec
     ss1 << "{";
     ss2 << "{";
 
-    for (; first1 != last1; ++first1, ++first2) 
+    for (; first1 != last1 and first2 != last2; ++first1, ++first2) 
     {
         ss1 << *first1 << ", ";
         ss2 << *first2 << ", ";

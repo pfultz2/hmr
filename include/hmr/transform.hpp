@@ -9,6 +9,7 @@
 #define HMR_GUARD_TRANSFORM_HPP
 
 #include <hmr/detail/operators.hpp>
+#include <hmr/detail/is_partial.hpp>
 #include <hmr/adaptor_base.hpp>
 #include <fit/function.hpp>
 #include <fit/pipable.hpp>
@@ -17,6 +18,7 @@
 #include <tick/requires.h>
 #include <iterator>
 #include <type_traits>
+#include <cassert>
 
 
 namespace hmr {
@@ -39,12 +41,17 @@ struct transform_iterator : hmr::detail::iterator_operators<transform_iterator<I
     Iterator it;
     Range* rng;
 
-    transform_iterator()
+    transform_iterator() : rng(nullptr)
     {}
 
     template<class T, FIT_ENABLE_IF_CONVERTIBLE(T, Iterator)>
     transform_iterator(T i, Range& r) : it(std::move(i)), rng(&r)
     {}
+
+    bool is_partial() const
+    {
+        return rng != nullptr and hmr::is_partial(it);
+    }
 
     template<class T>
     static auto increment(T& x) FIT_RETURNS(++x.it);
@@ -63,6 +70,7 @@ struct transform_iterator : hmr::detail::iterator_operators<transform_iterator<I
 
     reference operator *() const 
     {
+        assert(!this->is_partial());
         return fit::apply(rng->f, *it);
     }    
 };
@@ -88,7 +96,7 @@ template<class F>
 struct transform_base
 {
     F f;
-    transform_base(F f) : f(std::move(f))
+    transform_base(F f_) : f(std::move(f_))
     {}
 
     template<class Iterator, class Self>

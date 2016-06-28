@@ -9,6 +9,7 @@
 #define HMR_GUARD_REVERSE_HPP
 
 #include <hmr/detail/operators.hpp>
+#include <hmr/detail/is_partial.hpp>
 #include <hmr/adaptor_base.hpp>
 #include <fit/function.hpp>
 #include <fit/pipable.hpp>
@@ -19,6 +20,7 @@
 #include <tick/requires.h>
 #include <iterator>
 #include <type_traits>
+#include <cassert>
 
 // To be removed
 #include <fit/decay.hpp>
@@ -46,6 +48,11 @@ struct reverse_iterator : hmr::detail::iterator_operators<reverse_iterator<Itera
     reverse_iterator(T i) : it(std::move(i))
     {}
 
+    bool is_partial() const
+    {
+        return hmr::is_partial(it);
+    }
+
     template<class T>
     static auto increment(T& x) FIT_RETURNS(--x.it);
 
@@ -63,6 +70,7 @@ struct reverse_iterator : hmr::detail::iterator_operators<reverse_iterator<Itera
 
     reference operator *() const 
     {
+        assert(!this->is_partial());
         Iterator r = it;
         --r;
         return *r;

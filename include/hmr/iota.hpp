@@ -9,6 +9,7 @@
 #define HMR_GUARD_IOTA_HPP
 
 #include <hmr/detail/operators.hpp>
+#include <hmr/detail/is_partial.hpp>
 #include <hmr/adaptor_base.hpp>
 #include <fit/function.hpp>
 #include <fit/pipable.hpp>
@@ -17,6 +18,7 @@
 #include <tick/requires.h>
 #include <iterator>
 #include <type_traits>
+#include <cassert>
 #include <hmr/iterator_range.hpp>
 
 namespace hmr {
@@ -40,6 +42,11 @@ struct iota_iterator : hmr::detail::iterator_operators<iota_iterator<Iterator>>
     iota_iterator(T i) : it(std::move(i))
     {}
 
+    bool is_partial() const
+    {
+        return hmr::is_partial(it);
+    }
+
     template<class T>
     static auto increment(T& x) FIT_RETURNS(++x.it);
 
@@ -57,6 +64,7 @@ struct iota_iterator : hmr::detail::iterator_operators<iota_iterator<Iterator>>
 
     reference operator *() const 
     {
+        assert(!this->is_partial());
         return it;
     }    
 };

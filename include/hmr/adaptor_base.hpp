@@ -9,9 +9,11 @@
 #define HMR_GUARD_ADAPTOR_BASE_HPP
 
 #include <fit/detail/delegate.hpp>
+#include <hmr/detail/is_partial.hpp>
 #include <fit/returns.hpp>
 #include <hmr/beginend.hpp>
 #include <hmr/detail/join.hpp>
+#include <cassert>
 
 namespace hmr { namespace detail {
 
@@ -55,11 +57,13 @@ public:
     {}
     Range &base_range()
     {
+        assert(rng_ != nullptr);
         return *rng_;
     }
 
     const Range &base_range() const
     {
+        assert(rng_ != nullptr);
         return *rng_;
     }
 
@@ -78,7 +82,10 @@ template<class Adaptor, class Range>
 struct adaptor_base : Adaptor, detail::adaptor_base_storage<Range>
 {
     typedef detail::adaptor_base_storage<Range> range_base;
-    template<class R, class... Ts>
+    template<class R, class... Ts, class=typename std::enable_if<(
+        std::is_convertible<R, range_base>::value && 
+        std::is_constructible<Adaptor, Ts&&...>::value
+    )>::type>
     adaptor_base(R&& r, Ts&&... xs) : Adaptor(std::forward<Ts>(xs)...), range_base(std::forward<R>(r))
     {}
 
@@ -91,6 +98,17 @@ struct adaptor_base : Adaptor, detail::adaptor_base_storage<Range>
     {
         return *this;
     }
+
+    bool is_partial() const
+    {
+        return hmr::is_partial(this->base_adaptor()) and hmr::is_partial(this->base_range());
+    }
+
+    template<class T=Adaptor, int=0>
+    auto segments() FIT_RETURNS(T::segments(this->base_range(), this->base_adaptor()));
+
+    template<class T=Adaptor, long=0>
+    auto segments() const FIT_RETURNS(T::segments(this->base_range(), this->base_adaptor()));
 
     template<class T=Adaptor, int=0>
     auto begin() FIT_RETURNS(T::range_begin(this->base_range(), this->base_adaptor()));

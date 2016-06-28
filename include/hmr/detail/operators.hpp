@@ -11,7 +11,28 @@
 #include <fit/returns.hpp>
 #include <tick/requires.h>
 
-namespace hmr {
+namespace hmr { namespace operators {
+
+template<class T>
+auto increment(T& x) FIT_RETURNS(++x);
+
+template<class T>
+auto decrement(T& x) FIT_RETURNS(--x);
+
+template<class T, class I>
+auto advance(T& x, I n) FIT_RETURNS(x += n);
+
+template<class T>
+auto distance(const T& x, const T& y) FIT_RETURNS(x - y);
+
+template<class T>
+auto equal(const T& x, const T& y) FIT_RETURNS(x == y);
+
+template<class T>
+auto deref(const T& x) FIT_RETURNS(*x);
+
+
+}
 
 namespace detail {
 
@@ -92,7 +113,7 @@ struct iterator_operators
     friend auto operator>=(const U& x, const T& y) FIT_RETURNS(!static_cast<bool>(y > x))
 
     template<class U, TICK_REQUIRES(!std::is_convertible<U, T>::value)>
-    friend auto operator==(const U& y, const T& x) FIT_RETURNS(x == y)
+    friend auto operator==(const U& y, const T& x) FIT_RETURNS(U::equal(x, y))
     template<class U, TICK_REQUIRES(!std::is_convertible<U, T>::value)>
     friend auto operator!=(const U& y, const T& x) FIT_RETURNS(!static_cast<bool>(x == y))
     template<class U>
