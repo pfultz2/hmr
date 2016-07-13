@@ -9,7 +9,6 @@
 #define HMR_GUARD_IOTA_HPP
 
 #include <hmr/detail/operators.hpp>
-#include <hmr/detail/is_partial.hpp>
 #include <hmr/adaptor_base.hpp>
 #include <fit/function.hpp>
 #include <fit/pipable.hpp>
