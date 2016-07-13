@@ -11,28 +11,7 @@
 #include <fit/returns.hpp>
 #include <tick/requires.h>
 
-namespace hmr { namespace operators {
-
-template<class T>
-auto increment(T& x) FIT_RETURNS(++x);
-
-template<class T>
-auto decrement(T& x) FIT_RETURNS(--x);
-
-template<class T, class I>
-auto advance(T& x, I n) FIT_RETURNS(x += n);
-
-template<class T>
-auto distance(const T& x, const T& y) FIT_RETURNS(x - y);
-
-template<class T>
-auto equal(const T& x, const T& y) FIT_RETURNS(x == y);
-
-template<class T>
-auto deref(const T& x) FIT_RETURNS(*x);
-
-
-}
+namespace hmr { 
 
 namespace detail {
 
@@ -80,44 +59,38 @@ struct iterator_operators
 {
 
     // Core operators
+
+    // Increment
     template<class U, TICK_REQUIRES(std::is_same<U, T>::value)>
     friend auto operator++(U& x) FIT_RETURNS(U::increment(x));
 
+    // Decrement
     template<class U, TICK_REQUIRES(std::is_same<U, T>::value)>
     friend auto operator--(U& x) FIT_RETURNS(U::decrement(x));
 
+    // Advance
     template<class U, class I, TICK_REQUIRES(std::is_same<U, T>::value)>
     friend auto operator+=(U& x, I n) FIT_RETURNS(U::advance(x, n));
 
-    template<class U, TICK_REQUIRES(std::is_same<U, T>::value)>
-    friend auto operator-(const U& x, const U& y) FIT_RETURNS(U::distance(x, y));
+    // Distance
+    template<class U, class Self=T>
+    friend auto operator-(const T& x, const U& y) FIT_RETURNS(Self::distance(x, y));
 
-    template<class U, TICK_REQUIRES(std::is_same<U, T>::value)>
-    friend auto operator==(const U& x, const U& y) FIT_RETURNS(U::equal(x, y));
-
-
+    // Equal
+    template<class U, class Self=T>
+    friend auto operator==(const T& x, const U& y) FIT_RETURNS(Self::equal(x, y));
 
     template<class U>
-    friend auto operator<(const T& x, const U& y) FIT_RETURNS(static_cast<bool>((x - y) < 0))
+    friend auto operator<(const T& x, const U& y) FIT_RETURNS(static_cast<bool>((x - y) < 0));
     template<class U>
-    friend auto operator<=(const T& x, const U& y) FIT_RETURNS(!static_cast<bool>(x > y))
+    friend auto operator<=(const T& x, const U& y) FIT_RETURNS(!static_cast<bool>(x > y));
     template<class U>
-    friend auto operator>=(const T& x, const U& y) FIT_RETURNS(!static_cast<bool>(x < y))
-    template<class U, TICK_REQUIRES(!std::is_convertible<U, T>::value)>
-    friend auto operator>(const U& x, const T& y)  FIT_RETURNS(y < x)
-    template<class U, TICK_REQUIRES(!std::is_convertible<U, T>::value)>
-    friend auto operator<(const U& x, const T& y)  FIT_RETURNS(y > x)
-    template<class U, TICK_REQUIRES(!std::is_convertible<U, T>::value)>
-    friend auto operator<=(const U& x, const T& y) FIT_RETURNS(!static_cast<bool>(y < x))
-    template<class U, TICK_REQUIRES(!std::is_convertible<U, T>::value)>
-    friend auto operator>=(const U& x, const T& y) FIT_RETURNS(!static_cast<bool>(y > x))
+    friend auto operator>=(const T& x, const U& y) FIT_RETURNS(!static_cast<bool>(x < y));
+    template<class U>
+    friend auto operator>(const T& x, const U& y) FIT_RETURNS(y < x);
 
-    template<class U, TICK_REQUIRES(!std::is_convertible<U, T>::value)>
-    friend auto operator==(const U& y, const T& x) FIT_RETURNS(U::equal(x, y))
-    template<class U, TICK_REQUIRES(!std::is_convertible<U, T>::value)>
-    friend auto operator!=(const U& y, const T& x) FIT_RETURNS(!static_cast<bool>(x == y))
     template<class U>
-    friend auto operator!=(const T& y, const U& x) FIT_RETURNS(!static_cast<bool>(y == x))
+    friend auto operator!=(const T& x, const U& y) FIT_RETURNS(!static_cast<bool>(x == y));
 
     template<class U>
     friend auto operator +(T lhs, const U& rhs) -> decltype(T(lhs += rhs)) { return lhs += rhs; }

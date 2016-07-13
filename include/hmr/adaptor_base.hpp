@@ -9,7 +9,6 @@
 #define HMR_GUARD_ADAPTOR_BASE_HPP
 
 #include <fit/detail/delegate.hpp>
-#include <hmr/detail/is_partial.hpp>
 #include <fit/returns.hpp>
 #include <hmr/beginend.hpp>
 #include <hmr/detail/join.hpp>
@@ -48,12 +47,16 @@ public:
 template<class Range>
 class adaptor_base_storage<Range &>
 {
+    // typedef typename std::remove_extent<Range>::type range_type;
+    // static_assert(!std::is_array<Range>{}, "");
     Range *rng_;
 public:
-    adaptor_base_storage()
+    adaptor_base_storage() 
+    : rng_(nullptr)
     {}
 
-    adaptor_base_storage(Range& r) : rng_(&r)
+    adaptor_base_storage(Range& r) 
+    : rng_(&r)
     {}
     Range &base_range()
     {
@@ -97,11 +100,6 @@ struct adaptor_base : Adaptor, detail::adaptor_base_storage<Range>
     const Adaptor& base_adaptor() const
     {
         return *this;
-    }
-
-    bool is_partial() const
-    {
-        return hmr::is_partial(this->base_adaptor()) and hmr::is_partial(this->base_range());
     }
 
     template<class T=Adaptor, int=0>

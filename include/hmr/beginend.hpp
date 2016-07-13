@@ -8,6 +8,7 @@
 #ifndef HMR_GUARD_BEGINEND_HPP
 #define HMR_GUARD_BEGINEND_HPP
 
+#include <type_traits>
 #include <iterator>
 #include <fit/function.hpp>
 #include <fit/returns.hpp>

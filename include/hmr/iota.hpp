@@ -35,17 +35,12 @@ struct iota_iterator : hmr::detail::iterator_operators<iota_iterator<Iterator>>
     typedef value_type* pointer;
     typedef std::input_iterator_tag iterator_category;
 
-    iota_iterator()
+    iota_iterator() : it()
     {}
 
     template<class T, FIT_ENABLE_IF_CONVERTIBLE(T, Iterator)>
     iota_iterator(T i) : it(std::move(i))
     {}
-
-    bool is_partial() const
-    {
-        return hmr::is_partial(it);
-    }
 
     template<class T>
     static auto increment(T& x) FIT_RETURNS(++x.it);
@@ -56,15 +51,14 @@ struct iota_iterator : hmr::detail::iterator_operators<iota_iterator<Iterator>>
     template<class T, class I>
     static auto advance(T& x, I n) FIT_RETURNS(x.it += n);
 
-    template<class T>
-    static auto distance(const T& x, const T& y) FIT_RETURNS(x.it - y.it);
+    template<class T, class U>
+    static auto distance(const T& x, const U& y) FIT_RETURNS(x.it - y.it);
 
-    template<class T>
-    static auto equal(const T& x, const T& y) FIT_RETURNS(x.it == y.it);
+    template<class T, class U>
+    static auto equal(const T& x, const U& y) FIT_RETURNS(x.it == y.it);
 
     reference operator *() const 
     {
-        assert(!this->is_partial());
         return it;
     }    
 };

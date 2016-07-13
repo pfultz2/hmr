@@ -9,7 +9,6 @@ PROVE_CASE()
     PROVE_CHECK(to_<std::string>(s) == "helloworld!");
     auto rs = s | hmr::view::reverse;
     PROVE_CHECK(to_<std::string>(rs) == "!dlrowolleh");
-    
 }
 
 PROVE_CASE()
@@ -28,6 +27,13 @@ PROVE_CASE()
     PROVE_CHECK(to_<std::string>(s) == "helloworld!");
     auto rs = s | hmr::view::reverse;
     PROVE_CHECK(to_<std::string>(rs) == "!dlrowolleh");
+}
+
+PROVE_CASE()
+{
+    std::vector<std::string> vs{"", "hello","","world","","","!",""};
+    auto s = vs | hmr::view::reverse | hmr::view::join;
+    PROVE_CHECK(to_<std::string>(s) == "!worldhello");
 }
 
 PROVE_CASE()

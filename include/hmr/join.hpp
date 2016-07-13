@@ -9,7 +9,6 @@
 #define HMR_GUARD_JOIN_HPP
 
 #include <hmr/detail/operators.hpp>
-#include <hmr/detail/is_partial.hpp>
 #include <hmr/adaptor_base.hpp>
 #include <fit/function.hpp>
 #include <fit/pipable.hpp>
@@ -18,6 +17,7 @@
 #include <fit/construct.hpp>
 #include <tick/requires.h>
 #include <tick/traits/is_iterator.h>
+#include <hmr/iterator.hpp>
 #include <iterator>
 #include <type_traits>
 #include <cassert>
@@ -25,6 +25,8 @@
 // To be removed
 #include <fit/decay.hpp>
 #include <fit/by.hpp>
+
+#include <iostream>
 
 namespace hmr {
 
@@ -36,45 +38,105 @@ std::input_iterator_tag join_iterator_tag(std::input_iterator_tag,std::input_ite
 std::forward_iterator_tag join_iterator_tag(std::forward_iterator_tag,std::forward_iterator_tag);
 std::bidirectional_iterator_tag join_iterator_tag(std::bidirectional_iterator_tag,std::bidirectional_iterator_tag);
 
+struct inner_empty {};
+
+// TODO: Support non-default constructible types
 template<class T, class=void>
 struct inner_range
 {
-    typedef decltype(hmr::begin(std::declval<T>())) inner_iterator;
-    T data;
-    inner_iterator iterator;
-
-    static_assert(std::is_default_constructible<T>{}, "Not valid inner range");
-
-    inner_range() : data(), iterator()
-    {}
-
-    inner_range(inner_iterator it) : iterator(it)
-    {}
-
-    bool is_partial() const
+    typedef decltype(hmr::begin(std::declval<T&>())) inner_iterator;
+    union 
     {
-        return hmr::is_partial(data) and hmr::is_partial(iterator);
+        inner_empty empty;
+        T data;
+    };
+    inner_iterator iterator;
+    bool initialized;
+
+    void clear()
+    {
+        if (initialized) data.~T();
+        initialized = false;
     }
+
+    // static_assert(std::is_default_constructible<T>{}, "Not valid inner range");
+
+    inner_range() : iterator(), initialized(false)
+    {}
+
+    inner_range(inner_iterator it) : iterator(it), initialized(false)
+    {}
+
+    inner_range(const inner_range& rhs) : initialized(rhs.initialized)
+    {
+        if (initialized) 
+        {
+            data = rhs.data;
+            auto d = hmr::distance(rhs.iterator, hmr::begin(rhs.data));
+            iterator = hmr::next(hmr::begin(data), d);
+        }
+    }
+
+    inner_range(inner_range&& rhs) : initialized(rhs.initialized)
+    {
+        
+        if (initialized) 
+        {
+            data = std::move(rhs.data);
+            auto d = hmr::distance(rhs.iterator, hmr::begin(rhs.data));
+            iterator = hmr::next(hmr::begin(data), d);
+        }
+    }
+
+    ~inner_range()
+    {
+        this->clear();
+    }
+
+    inner_range& operator=(inner_range rhs)
+    {
+        using std::swap;
+
+        this->clear();
+        if (rhs.initialized)
+        {
+            this->data = rhs.data;
+            initialized = rhs.initialized;
+        }
+        swap(iterator, rhs.iterator);
+
+        return *this;
+    }
+
 
     template<class U>
     void set(U&& x)
     {
+        initialized = true;
         data = std::forward<U>(x);
+    }
+
+    bool check() const
+    {
+        return initialized;
     }
 
     inner_iterator begin()
     {
-        return hmr::begin(data);
+        assert(initialized);
+        return hmr::begin(this->data);
     }
 
     inner_iterator end() 
     {
-        return hmr::end(data);
+        assert(initialized);
+        return hmr::end(this->data);
     }
 
     bool is_end() const
     {
-        return hmr::end(data) == iterator;
+        assert(initialized);
+        return hmr::end(this->data) == iterator;
     }
 };
 
@@ -88,17 +150,17 @@ struct inner_range<T&>
     inner_range() : data(), iterator()
     {}
 
-    inner_range(inner_iterator it) : iterator(it)
+    inner_range(inner_iterator it) : data(nullptr), iterator(it)
     {}
-
-    bool is_partial() const
-    {
-        return data != nullptr and hmr::is_partial(iterator);
-    }
 
     void set(T& x)
     {
         data = &x;
+    }
+
+    bool check() const
+    {
+        return data != nullptr;
     }
 
     inner_iterator begin()
@@ -144,18 +206,30 @@ struct join_iterator : hmr::detail::iterator_operators<join_iterator<OuterIterat
     OuterSentinel last;
     detail::inner_range<inner_range_reference> inner;
 
-    join_iterator()
-    {}
+    join_iterator() : iterator(), last(), inner()
+    {
+    }
 
-    join_iterator(OuterIterator iterator_, OuterSentinel last_) : iterator(iterator_), last(last_)
+    template<class Iterator, class Sentinel, 
+        FIT_ENABLE_IF_CONVERTIBLE(Iterator, OuterIterator),
+        FIT_ENABLE_IF_CONVERTIBLE(Sentinel, OuterSentinel)
+    >
+    join_iterator(Iterator iterator_, Sentinel last_)
+    : iterator(iterator_), last(last_), inner()
     {
         this->increment<std::false_type>();
         assert(this->check());
     }
 
-    bool is_partial() const
+    template<class Iterator, class Sentinel, 
+        FIT_ENABLE_IF_CONVERTIBLE(Iterator, OuterIterator),
+        FIT_ENABLE_IF_CONVERTIBLE(Sentinel, OuterSentinel)
+    >
+    join_iterator(join_iterator<Iterator, Sentinel> rhs)
+    : iterator(std::move(rhs.iterator)), last(std::move(rhs.last)), inner(std::move(rhs.inner))
     {
-        return hmr::is_partial(this->iterator) and this->inner.is_partial();
+        this->increment<std::false_type>();
+        assert(this->check());
     }
 
     bool is_outer_end() const
@@ -186,7 +260,7 @@ struct join_iterator : hmr::detail::iterator_operators<join_iterator<OuterIterat
             {
                 return;
                 resume:;
-                assert(!this->is_outer_end());
+                assert(!this->is_outer_end() and this->inner.check());
             }
         }
     }
@@ -194,7 +268,9 @@ struct join_iterator : hmr::detail::iterator_operators<join_iterator<OuterIterat
     template<class T>
     static T& increment(T& x)
     {
-        assert(!x.is_partial() and !x.is_outer_end() and !x.inner.is_end());
+        assert(!x.is_outer_end()); 
+        assert(x.inner.check());
+        assert(!x.inner.is_end());
         x.increment();
         assert(x.check());
         return x;
@@ -220,16 +296,17 @@ struct join_iterator : hmr::detail::iterator_operators<join_iterator<OuterIterat
         return x;
     }
 
-    template<class T>
-    static bool equal(const T& x, const T& y)
+    template<class... T, class... U>
+    static bool equal(const join_iterator<T...>& x, const join_iterator<U...>& y)
     {
-        assert(!x.is_partial() and !y.is_partial() and x.is_compatible(y));
+        assert(x.is_compatible(y));
         return x.iterator == y.iterator and (x.is_outer_end() or y.is_outer_end() or x.inner.iterator == y.inner.iterator);
     }
 
     reference operator *() const 
     {
-        assert(!this->is_partial() and !this->is_outer_end() and !this->inner.is_end());
+        assert(!this->is_outer_end());
+        assert(!this->inner.is_end());
         return *this->inner.iterator;
     } 
 

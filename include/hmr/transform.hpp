@@ -9,7 +9,6 @@
 #define HMR_GUARD_TRANSFORM_HPP
 
 #include <hmr/detail/operators.hpp>
-#include <hmr/detail/is_partial.hpp>
 #include <hmr/adaptor_base.hpp>
 #include <fit/function.hpp>
 #include <fit/pipable.hpp>
@@ -20,6 +19,7 @@
 #include <type_traits>
 #include <cassert>
 
+#include <iostream>
 
 namespace hmr {
 
@@ -41,17 +41,21 @@ struct transform_iterator : hmr::detail::iterator_operators<transform_iterator<I
     Iterator it;
     Range* rng;
 
-    transform_iterator() : rng(nullptr)
+    transform_iterator() : it(), rng(nullptr)
     {}
 
     template<class T, FIT_ENABLE_IF_CONVERTIBLE(T, Iterator)>
-    transform_iterator(T i, Range& r) : it(std::move(i)), rng(&r)
+    transform_iterator(T i, Range& r) 
+    : it(std::move(i)), rng(&r)
     {}
 
-    bool is_partial() const
-    {
-        return rng != nullptr and hmr::is_partial(it);
-    }
+    template<class T, class R, 
+        FIT_ENABLE_IF_CONVERTIBLE(T, Iterator), 
+        FIT_ENABLE_IF_CONVERTIBLE(R*, Range*)
+    >
+    transform_iterator(transform_iterator<T, R> rhs) 
+    : it(std::move(rhs.it)), rng(rhs.rng)
+    {}
 
     template<class T>
     static auto increment(T& x) FIT_RETURNS(++x.it);
@@ -62,15 +66,15 @@ struct transform_iterator : hmr::detail::iterator_operators<transform_iterator<I
     template<class T, class I>
     static auto advance(T& x, I n) FIT_RETURNS(x.it += n);
 
-    template<class T>
-    static auto distance(const T& x, const T& y) FIT_RETURNS(x.it - y.it);
+    template<class T, class U>
+    static auto distance(const T& x, const U& y) FIT_RETURNS(x.it - y.it);
 
-    template<class T>
-    static auto equal(const T& x, const T& y) FIT_RETURNS(x.it == y.it);
+    template<class T, class U>
+    static auto equal(const T& x, const U& y) FIT_RETURNS(x.it == y.it);
 
     reference operator *() const 
     {
-        assert(!this->is_partial());
+        assert(rng != nullptr);
         return fit::apply(rng->f, *it);
     }    
 };
@@ -96,8 +100,9 @@ template<class F>
 struct transform_base
 {
     F f;
-    transform_base(F f_) : f(std::move(f_))
-    {}
+    FIT_DELGATE_CONSTRUCTOR(transform_base, F, f)
+    // transform_base(F f_) : f(std::move(f_))
+    // {}
 
     template<class Iterator, class Self>
     static iterator::transform_iterator<Iterator, Self> iterator_create(Iterator it, Self& self)

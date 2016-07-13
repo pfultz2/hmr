@@ -8,34 +8,34 @@
 #ifndef HMR_GUARD_IS_PARTIAL_HPP
 #define HMR_GUARD_IS_PARTIAL_HPP
 
-#include <fit/conditional.hpp>
-#include <fit/function.hpp>
+// #include <fit/conditional.hpp>
+// #include <fit/function.hpp>
 
-namespace hmr { namespace detail {
+namespace hmr { namespace detail {}
 
-struct is_partial_pointer
-{
-    template<class T>
-    bool operator()(T* x) const
-    {
-        return x == nullptr;
-    }
-};
+// struct is_partial_pointer
+// {
+//     template<class T>
+//     bool operator()(T* x) const
+//     {
+//         return x == nullptr;
+//     }
+// };
 
-struct is_partial_object
-{
-    template<class T>
-    auto operator()(T&& x) const 
-    FIT_RETURNS(x.is_partial());
-};
+// struct is_partial_object
+// {
+//     template<class T>
+//     auto operator()(T&& x) const 
+//     FIT_RETURNS(x.is_partial());
+// };
 
-}
+// }
 
-FIT_STATIC_FUNCTION(is_partial) = fit::conditional(
-    detail::is_partial_pointer{},
-    detail::is_partial_object{},
-    fit::always(std::false_type{})
-);
+// FIT_STATIC_FUNCTION(is_partial) = fit::conditional(
+//     detail::is_partial_pointer{},
+//     detail::is_partial_object{},
+//     fit::always(std::false_type{})
+// );
 
 } // namespace hmr
 

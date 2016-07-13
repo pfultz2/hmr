@@ -25,38 +25,29 @@ struct yield_range
     typedef typename std::add_const<value_type>::type const_value_type;
     value_type data;
 
-    yield_range()
+    yield_range() : data()
     {}
 
     yield_range(value_type x) : data(std::move(x))
     {}
 
-    bool is_partial() const
-    {
-        return hmr::is_partial(data);
-    }
-
     const_value_type* begin() const
     {
-        assert(!this->is_partial());
         return std::addressof(data);
     }
 
     const_value_type* end() const
     {
-        assert(!this->is_partial());
         return std::addressof(data)+1;
     }
 
     value_type* begin()
     {
-        assert(!this->is_partial());
         return std::addressof(data);
     }
 
     value_type* end()
     {
-        assert(!this->is_partial());
         return std::addressof(data)+1;
     }
 };
@@ -68,38 +59,33 @@ struct yield_range<T&>
     typedef T value_type;
     typedef typename std::add_const<value_type>::type const_value_type;
 
-    yield_range()
+    yield_range() : data(nullptr)
     {}
 
     yield_range(T& x) : data(std::addressof(x))
     {}
 
-    bool is_partial() const
-    {
-        return hmr::is_partial(data);
-    }
-
     const_value_type* begin() const
     {
-        assert(!this->is_partial());
+        assert(data != nullptr);
         return data;
     }
 
     const_value_type* end() const
     {
-        assert(!this->is_partial());
+        assert(data != nullptr);
         return data+1;
     }
 
     value_type* begin()
     {
-        assert(!this->is_partial());
+        assert(data != nullptr);
         return data;
     }
 
     value_type* end()
     {
-        assert(!this->is_partial());
+        assert(data != nullptr);
         return data+1;
     }
 };

@@ -9,7 +9,6 @@
 #define HMR_GUARD_REVERSE_HPP
 
 #include <hmr/detail/operators.hpp>
-#include <hmr/detail/is_partial.hpp>
 #include <hmr/adaptor_base.hpp>
 #include <fit/function.hpp>
 #include <fit/pipable.hpp>
@@ -41,17 +40,16 @@ struct reverse_iterator : hmr::detail::iterator_operators<reverse_iterator<Itera
 
     Iterator it;
 
-    reverse_iterator()
+    reverse_iterator() : it()
     {}
 
     template<class T, FIT_ENABLE_IF_CONVERTIBLE(T, Iterator)>
     reverse_iterator(T i) : it(std::move(i))
     {}
 
-    bool is_partial() const
-    {
-        return hmr::is_partial(it);
-    }
+    template<class T, FIT_ENABLE_IF_CONVERTIBLE(T, Iterator)>
+    reverse_iterator(reverse_iterator<T> rhs) : it(std::move(rhs.it))
+    {}
 
     template<class T>
     static auto increment(T& x) FIT_RETURNS(--x.it);
@@ -62,15 +60,14 @@ struct reverse_iterator : hmr::detail::iterator_operators<reverse_iterator<Itera
     template<class T, class I>
     static auto advance(T& x, I n) FIT_RETURNS(x.it += -n);
 
-    template<class T>
-    static auto distance(const T& x, const T& y) FIT_RETURNS(y.it - x.it);
+    template<class T, class U>
+    static auto distance(const T& x, const U& y) FIT_RETURNS(x.it - y.it);
 
-    template<class T>
-    static auto equal(const T& x, const T& y) FIT_RETURNS(x.it == y.it);
+    template<class T, class U>
+    static auto equal(const T& x, const U& y) FIT_RETURNS(x.it == y.it);
 
     reference operator *() const 
     {
-        assert(!this->is_partial());
         Iterator r = it;
         --r;
         return *r;
