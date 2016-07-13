@@ -51,7 +51,7 @@ struct iota_iterator : hmr::detail::iterator_operators<iota_iterator<Iterator>>
     static auto advance(T& x, I n) FIT_RETURNS(x.it += n);
 
     template<class T, class U>
-    static auto distance(const T& x, const U& y) FIT_RETURNS(x.it - y.it);
+    static auto distance(const T& x, const U& y) FIT_RETURNS(y.it - x.it);
 
     template<class T, class U>
     static auto equal(const T& x, const U& y) FIT_RETURNS(x.it == y.it);

@@ -74,7 +74,7 @@ struct iterator_operators
 
     // Distance
     template<class U, class Self=T>
-    friend auto operator-(const T& x, const U& y) FIT_RETURNS(Self::distance(x, y));
+    friend auto operator-(const U& x, const T& y) FIT_RETURNS(Self::distance(y, x));
 
     // Equal
     template<class U, class Self=T>
