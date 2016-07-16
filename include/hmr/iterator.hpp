@@ -11,6 +11,8 @@
 #include <hmr/beginend.hpp>
 #include <fit/conditional.hpp>
 #include <fit/function.hpp>
+#include <cassert>
+#include <iostream>
 
 namespace hmr {
 
@@ -18,16 +20,19 @@ namespace detail {
 
 struct distance_subtract_fn
 {
-    template<class Sentinel, class Iterator>
-    auto operator()(Sentinel s, Iterator i) const FIT_RETURNS
-    (s - i);
+    template<class Iterator, class Sentinel>
+    auto operator()(Iterator i, Sentinel s) const -> decltype(s - i)
+    {
+        assert((s - i) >= 0);
+        return (s - i);
+    }
 };
 
 struct distance_calc_fn
 {
-    template<class Sentinel, class Iterator>
+    template<class Iterator, class Sentinel>
     typename std::iterator_traits<Iterator>::difference_type 
-    operator()(Sentinel s, Iterator i) const
+    operator()(Iterator i, Sentinel s) const
     {
         typename std::iterator_traits<Iterator>::difference_type r = 0;
         while(i != s)

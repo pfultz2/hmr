@@ -40,7 +40,6 @@ std::bidirectional_iterator_tag join_iterator_tag(std::bidirectional_iterator_ta
 
 struct inner_empty {};
 
-// TODO: Support non-default constructible types
 template<class T, class=void>
 struct inner_range
 {
@@ -57,36 +56,31 @@ struct inner_range
     {
         if (initialized) data.~T();
         initialized = false;
+        iterator = inner_iterator{};
     }
 
-    // static_assert(std::is_default_constructible<T>{}, "Not valid inner range");
+    auto distance() const FIT_RETURNS(hmr::distance(hmr::begin(data), iterator));
+
+    void assign(const inner_range& rhs)
+    {
+        this->clear();
+        initialized = rhs.initialized;
+        if (initialized)
+        {
+            this->data = rhs.data;
+            iterator = hmr::next(hmr::begin(data), rhs.distance());
+        }
+    }
 
     inner_range() : iterator(), initialized(false)
     {}
 
-    inner_range(inner_iterator it) : iterator(it), initialized(false)
-    {}
-
-    inner_range(const inner_range& rhs) : initialized(rhs.initialized)
+    inner_range(const inner_range& rhs) : iterator(), initialized(false)
     {
-        if (initialized) 
-        {
-            data = rhs.data;
-            auto d = hmr::distance(rhs.iterator, hmr::begin(rhs.data));
-            iterator = hmr::next(hmr::begin(data), d);
-        }
+        this->assign(rhs);
     }
 
-    inner_range(inner_range&& rhs) : initialized(rhs.initialized)
-    {
-        
-        if (initialized) 
-        {
-            data = std::move(rhs.data);
-            auto d = hmr::distance(rhs.iterator, hmr::begin(rhs.data));
-            iterator = hmr::next(hmr::begin(data), d);
-        }
-    }
+    // TODO: Move constructor
 
     ~inner_range()
     {
@@ -95,25 +89,32 @@ struct inner_range
 
     inner_range& operator=(inner_range rhs)
     {
-        using std::swap;
-
-        this->clear();
-        if (rhs.initialized)
-        {
-            this->data = rhs.data;
-            initialized = rhs.initialized;
-        }
-        swap(iterator, rhs.iterator);
-
+        this->assign(rhs);
         return *this;
     }
 
+    template<class U>
+    bool operator==(const U& rhs) const
+    {
+        return this->initialized and rhs.initialized and this->distance() == rhs.distance();
+    }
 
     template<class U>
-    void set(U&& x)
+    void set_begin(U&& x)
     {
+        this->clear();
         initialized = true;
         data = std::forward<U>(x);
+        iterator = hmr::begin(data);
+    }
+
+    template<class U>
+    void set_end(U&& x)
+    {
+        this->clear();
+        initialized = true;
+        data = std::forward<U>(x);
+        iterator = hmr::end(data);
     }
 
     bool check() const
@@ -153,9 +154,22 @@ struct inner_range<T&>
     inner_range(inner_iterator it) : data(nullptr), iterator(it)
     {}
 
-    void set(T& x)
+    template<class U>
+    bool operator==(const U& rhs) const
+    {
+        return iterator == rhs.iterator;
+    }
+
+    void set_begin(T& x)
     {
         data = &x;
+        iterator = hmr::begin(*data);
+    }
+
+    void set_end(T& x)
+    {
+        data = &x;
+        iterator = hmr::end(*data);
     }
 
     bool check() const
@@ -255,8 +269,7 @@ struct join_iterator : hmr::detail::iterator_operators<join_iterator<OuterIterat
         for(;this->iterator!=this->last;++this->iterator)
         {
             assert(!this->is_outer_end());
-            this->inner.set(*this->iterator);
-            for(this->inner.iterator=this->inner.begin();this->inner.iterator!=this->inner.end();++this->inner.iterator)
+            for(this->inner.set_begin(*this->iterator);this->inner.iterator!=this->inner.end();++this->inner.iterator)
             {
                 return;
                 resume:;
@@ -268,7 +281,7 @@ struct join_iterator : hmr::detail::iterator_operators<join_iterator<OuterIterat
     template<class T>
     static T& increment(T& x)
     {
-        assert(!x.is_outer_end()); 
+        assert(!x.is_outer_end());
         assert(x.inner.check());
         assert(!x.inner.is_end());
         x.increment();
@@ -284,8 +297,7 @@ struct join_iterator : hmr::detail::iterator_operators<join_iterator<OuterIterat
         {
             --x.iterator;
             assert(!x.is_outer_end());
-            x.inner.set(*x.iterator);
-            for(x.inner.iterator=x.inner.end();x.inner.iterator!=x.inner.begin();)
+            for(x.inner.set_end(*x.iterator);x.inner.iterator!=x.inner.begin();)
             {
                 --x.inner.iterator;
                 return x;
@@ -300,7 +312,8 @@ struct join_iterator : hmr::detail::iterator_operators<join_iterator<OuterIterat
     static bool equal(const join_iterator<T...>& x, const join_iterator<U...>& y)
     {
         assert(x.is_compatible(y));
-        return x.iterator == y.iterator and (x.is_outer_end() or y.is_outer_end() or x.inner.iterator == y.inner.iterator);
+        if (x.is_outer_end() or y.is_outer_end()) return x.is_outer_end() and y.is_outer_end();
+        else return (x.iterator == y.iterator and x.inner == y.inner);
     }
 
     reference operator *() const 
