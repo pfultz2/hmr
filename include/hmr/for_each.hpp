@@ -13,10 +13,31 @@
 #include <hmr/iota.hpp>
 #include <fit/compose.hpp>
 #include <fit/partial.hpp>
+#include <fit/capture.hpp>
+#include <fit/flip.hpp>
+#include <fit/fix.hpp>
 
 namespace hmr {
 
 namespace detail {
+
+struct for_each_segements_fn
+{
+    template<class Self, class Range, class F>
+    auto operator()(Self&& self, Range&& r, F&& f) const FIT_RETURNS
+    (
+        self(r.segments(), fit::capture(f)(fit::flip(self)))
+    );
+};
+
+struct for_each_fn
+{
+    template<class Self, class Range, class F>
+    void operator()(Self&&, Range&& r, F&& f) const
+    {
+        for(auto&& x:r) f(x);
+    }
+};
 
 template<class T>
 struct yield_range
@@ -91,6 +112,10 @@ struct yield_range<T&>
 };
 
 }
+
+FIT_STATIC_FUNCTION(for_each) = fit::pipable(fit::limit_c<2>(
+    fit::fix(fit::conditional(detail::for_each_segements_fn{}, detail::for_each_fn{}))
+));
 
 namespace view {
 

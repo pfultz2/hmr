@@ -101,8 +101,12 @@ struct transform_base
 {
     F f;
     FIT_DELGATE_CONSTRUCTOR(transform_base, F, f)
-    // transform_base(F f_) : f(std::move(f_))
-    // {}
+
+    template<class Range, class Self>
+    auto segments(Range&& r, Self& self) FIT_RETURNS
+    (
+        transform(r.segments(), transform(self.f))
+    );
 
     template<class Iterator, class Self>
     static iterator::transform_iterator<Iterator, Self> iterator_create(Iterator it, Self& self)

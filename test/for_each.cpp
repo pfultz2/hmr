@@ -129,3 +129,31 @@ PROVE_CASE()
     PROVE_CHECK(range_equal(rng, {1, 3, 5, 7, 9}));
 }
 
+PROVE_CASE()
+{
+    int rgi[] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+    auto rng = rgi | hmr::view::for_each(yield_if_is_odd());
+
+    int sum = 0;
+    hmr::for_each(rng, [&](int i)
+    {
+        sum += i;
+    });
+
+    PROVE_CHECK(sum == (1 + 3 + 5 + 7 + 9));
+}
+
+PROVE_CASE()
+{
+    int rgi[] = {1, 2, 3};
+    auto rng = rgi | hmr::view::for_each(yield_squared());
+
+    int sum = 0;
+    hmr::for_each(rng, [&](int i)
+    {
+        sum += i;
+    });
+
+    PROVE_CHECK(sum == (1 + 4 + 9));
+}
+
